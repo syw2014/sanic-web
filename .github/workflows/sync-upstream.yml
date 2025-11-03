@@ -1,0 +1,38 @@
+name: Sync with Upstream
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          ref: upstream-main
+          fetch-depth: 0
+
+      - name: Add upstream
+        run: |
+          git remote add upstream https://github.com/apconw/sanic-web.git
+          git fetch upstream
+
+      - name: Merge upstream/master into upstream-main
+        run: |
+          git merge upstream/master --no-edit || true
+
+      - name: Create Pull Request when conflict
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "chore: sync with official upstream"
+          title: "Sync with upstream/master"
+          body: "Auto sync from official upstream."
+          branch: sync/upstream
+          base: upstream-main
+
+      - name: Push changes
+        run: |
+          git push origin upstream-main || true
